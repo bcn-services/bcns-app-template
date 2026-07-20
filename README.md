@@ -1,33 +1,33 @@
 ---
 type: workflow-app
 delivery: hosted-web
-name: "@bcns/hosted-web-template"
+name: "@nseluga/hosted-web-template"
 status: template
 ---
 
 # hosted-web template
 
 A runnable **Next.js 14 (App Router, TypeScript strict)** starter for the
-standard hosted client app. It depends on the shared packages `@bcns/ui`,
-`@bcns/config`, and `@bcns/app-core` as **versioned dependencies from GitHub
+standard hosted client app. It depends on the shared packages `@nseluga/ui`,
+`@nseluga/config`, and `@nseluga/app-core` as **versioned dependencies from GitHub
 Packages**, and ships with the wiring points a real client build needs —
 env-driven config, an opt-in AI module, and a Stripe subscription webhook — as
 safe, keyless stubs.
 
 > This is a **GitHub Template Repository**. Create a client repo with
 > **"Use this template"** (name it `bcns-client-<slug>`, keep it Private), then
-> rename `"name"` in `package.json` from `@bcns/hosted-web-template` to your
+> rename `"name"` in `package.json` from `@nseluga/hosted-web-template` to your
 > client's package name.
 
 ## Quick start
 
-The `@bcns/*` deps come from the private GitHub Packages registry (see `.npmrc`),
+The `@nseluga/*` deps come from the private GitHub Packages registry (see `.npmrc`),
 so set a token first:
 
 ```bash
 export GITHUB_TOKEN=<PAT with read:packages>   # any machine that installs
 
-pnpm install        # resolves @bcns/* from GitHub Packages
+pnpm install        # resolves @nseluga/* from GitHub Packages
 pnpm dev            # serves on :3100
 pnpm build
 pnpm test
@@ -50,7 +50,7 @@ the single accessor; documented vars: `DATABASE_URL` (Neon), Clerk
 ## Opt-in AI module (`lib/ai.ts`)
 
 AI is **genuinely opt-in**. `maybeGetAiClient` checks `AI_ENABLED` first and
-returns `null` before `@bcns/app-core`'s `createAnthropicClient` is ever
+returns `null` before `@nseluga/app-core`'s `createAnthropicClient` is ever
 referenced. The client is constructed only when the flag is on **and** a key is
 present. The client's Anthropic key is read from env, never from source. See
 `tests/ai-optin.test.mjs` for the import-boundary proof of non-invocation.
@@ -58,7 +58,7 @@ present. The client's Anthropic key is read from env, never from source. See
 ## Stripe subscription webhook (`app/api/stripe/webhook/route.ts`)
 
 The route parses/validates an incoming event and routes the provision/suspend
-decision through `@bcns/app-core`'s pure `decideFromEvent`/`decideAccess`.
+decision through `@nseluga/app-core`'s pure `decideFromEvent`/`decideAccess`.
 Signature verification is a documented **stub** (no Stripe SDK bundled); real
 deployments must call `stripe.webhooks.constructEvent` with
 `STRIPE_WEBHOOK_SECRET` before trusting the payload. The decision logic lives in
@@ -67,7 +67,7 @@ deployments must call `stripe.webhooks.constructEvent` with
 ## Relationship to the bcns platform repo
 
 This standalone repo was extracted from `templates/hosted-web/` in the
-[`bcns`](https://github.com/nseluga/bcns) platform repo. The shared `@bcns/*`
+[`bcns`](https://github.com/nseluga/bcns) platform repo. The shared `@nseluga/*`
 packages are developed and published there; this template (and every client repo
 generated from it) consumes them by version. To roll out a shared improvement:
 publish a new package version from `bcns`, then bump the range here / in each
