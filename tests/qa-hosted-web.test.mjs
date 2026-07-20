@@ -1,44 +1,26 @@
 /**
- * QA value-add tests for the hosted-web template (A2).
- * Complements the engineer's ai-optin/webhook suites. Run with:
+ * QA value-add tests for the hosted-web template.
+ * Complements the ai-optin/health/webhooks suites. Run with:
  *   corepack pnpm --filter @nseluga/hosted-web-template test
  *
  * Covers:
- *  - webhook handler: active -> provision, canceled -> suspend (through app-core)
  *  - env module: safe defaults when NO keys are set (never throws, all undefined)
+ *  - env module: empty/whitespace values treated as unset
  *  - AI opt-in control case: flag ON + key present DOES invoke the injected factory
  */
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { handleStripeEvent } from "../lib/webhook.ts";
 import { getConfig } from "../lib/env.ts";
 import { maybeGetAiClient } from "../lib/ai.ts";
-
-function evt(status, type = "customer.subscription.updated") {
-  return { type, status, customerId: "cus_qa", subscriptionId: "sub_qa" };
-}
-
-test("webhook: active -> provision through the handler", () => {
-  const r = handleStripeEvent(evt("active"));
-  assert.equal(r.decision, "provision");
-  assert.equal(r.customerId, "cus_qa");
-  assert.equal(r.subscriptionId, "sub_qa");
-});
-
-test("webhook: canceled -> suspend through the handler", () => {
-  const r = handleStripeEvent(evt("canceled", "customer.subscription.deleted"));
-  assert.equal(r.decision, "suspend");
-});
 
 test("env: getConfig returns safe defaults when no keys are set (no throw)", () => {
   // Snapshot and clear every env var the config reads, then restore.
   const keys = [
     "DATABASE_URL",
-    "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY",
-    "CLERK_SECRET_KEY",
-    "STRIPE_SECRET_KEY",
-    "STRIPE_WEBHOOK_SECRET",
+    "NEXT_PUBLIC_SUPABASE_URL",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+    "SUPABASE_SERVICE_ROLE_KEY",
     "ANTHROPIC_API_KEY",
     "AI_ENABLED",
   ];
@@ -53,10 +35,9 @@ test("env: getConfig returns safe defaults when no keys are set (no throw)", () 
       cfg = getConfig();
     }, "getConfig must not throw when no env vars are set");
     assert.equal(cfg.databaseUrl, undefined);
-    assert.equal(cfg.clerkPublishableKey, undefined);
-    assert.equal(cfg.clerkSecretKey, undefined);
-    assert.equal(cfg.stripeSecretKey, undefined);
-    assert.equal(cfg.stripeWebhookSecret, undefined);
+    assert.equal(cfg.supabaseUrl, undefined);
+    assert.equal(cfg.supabaseAnonKey, undefined);
+    assert.equal(cfg.supabaseServiceRoleKey, undefined);
     assert.equal(cfg.anthropicApiKey, undefined);
     assert.equal(cfg.aiEnabled, false, "AI defaults OFF when AI_ENABLED unset");
   } finally {
@@ -68,13 +49,17 @@ test("env: getConfig returns safe defaults when no keys are set (no throw)", () 
 });
 
 test("env: empty/whitespace values are treated as unset", () => {
-  const saved = process.env.STRIPE_SECRET_KEY;
-  process.env.STRIPE_SECRET_KEY = "   ";
+  const saved = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  process.env.SUPABASE_SERVICE_ROLE_KEY = "   ";
   try {
-    assert.equal(getConfig().stripeSecretKey, undefined, "whitespace-only -> undefined");
+    assert.equal(
+      getConfig().supabaseServiceRoleKey,
+      undefined,
+      "whitespace-only -> undefined",
+    );
   } finally {
-    if (saved === undefined) delete process.env.STRIPE_SECRET_KEY;
-    else process.env.STRIPE_SECRET_KEY = saved;
+    if (saved === undefined) delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+    else process.env.SUPABASE_SERVICE_ROLE_KEY = saved;
   }
 });
 

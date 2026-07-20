@@ -22,11 +22,17 @@ function readFlag(name: string): boolean {
 }
 
 export interface AppConfig {
+  /** Direct Postgres connection string (Supabase project database). */
   databaseUrl?: string;
-  clerkPublishableKey?: string;
-  clerkSecretKey?: string;
-  stripeSecretKey?: string;
-  stripeWebhookSecret?: string;
+  /** Supabase project URL — browser-safe. */
+  supabaseUrl?: string;
+  /** Supabase anon key — browser-safe, subject to RLS. */
+  supabaseAnonKey?: string;
+  /**
+   * Supabase service-role key — server-only. Bypasses RLS; must never be
+   * referenced from any client-side code path.
+   */
+  supabaseServiceRoleKey?: string;
   anthropicApiKey?: string;
   /** Master switch for the opt-in AI module. Default OFF. */
   aiEnabled: boolean;
@@ -40,10 +46,9 @@ export interface AppConfig {
 export function getConfig(): AppConfig {
   return {
     databaseUrl: readEnv("DATABASE_URL"),
-    clerkPublishableKey: readEnv("NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY"),
-    clerkSecretKey: readEnv("CLERK_SECRET_KEY"),
-    stripeSecretKey: readEnv("STRIPE_SECRET_KEY"),
-    stripeWebhookSecret: readEnv("STRIPE_WEBHOOK_SECRET"),
+    supabaseUrl: readEnv("NEXT_PUBLIC_SUPABASE_URL"),
+    supabaseAnonKey: readEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY"),
+    supabaseServiceRoleKey: readEnv("SUPABASE_SERVICE_ROLE_KEY"),
     anthropicApiKey: readEnv("ANTHROPIC_API_KEY"),
     aiEnabled: readFlag("AI_ENABLED"),
   };

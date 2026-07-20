@@ -1,51 +1,57 @@
 # Deploy — hosted-web
 
-Documentation only. Target stack: **Coolify** (self-hosted PaaS) building the
-`Dockerfile`, fronted by **Cloudflare**, with **Neon** Postgres and **Clerk**
-auth. Assumes the app has been extracted to its own repo (see README).
+Documentation only. Target stack per `hosting-reference.md` (the platform
+reference in `~/os/knowledge/library/bcns/`): a shared **DigitalOcean Droplet**
+running one **PM2** process per client app, fronted by **Cloudflare**, with a
+per-client **Supabase** project for Postgres, auth, and file storage. No
+containers — plain Node processes that move via rsync + connection strings.
 
 ## Prerequisites
 
-- A Coolify instance (self-hosted) connected to the app's git repo.
-- A Neon project + database → gives you `DATABASE_URL`.
-- A Clerk application → gives you `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` and
-  `CLERK_SECRET_KEY`.
-- A Stripe account → `STRIPE_SECRET_KEY` and a webhook endpoint's
-  `STRIPE_WEBHOOK_SECRET`.
-- (Optional) An Anthropic API key if the AI feature is opted in (`AI_ENABLED=1`
-  + `ANTHROPIC_API_KEY`).
+- The shared DO droplet (Basic 2 vCPU / 4 GB, US region): SSH-key-only auth,
+  unattended security upgrades, DO cloud firewall + UFW restricting web
+  traffic to Cloudflare IPs, fail2ban, Node + pnpm + PM2 installed, PM2
+  startup script registered under systemd.
+- A **Supabase project for this client** (project-per-client is the tenant
+  isolation model) → gives you `DATABASE_URL`, `NEXT_PUBLIC_SUPABASE_URL`,
+  `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`.
+- A Cloudflare zone (per-client subdomain or the client's own domain via
+  CNAME), proxied (orange-cloud), "Full (strict)" TLS.
+- (Optional) An Anthropic API key if the AI feature is opted in
+  (`AI_ENABLED=1` + `ANTHROPIC_API_KEY`).
 
 ## Steps
 
-1. **Neon** — create the database; copy the pooled connection string into
-   `DATABASE_URL`.
-2. **Clerk** — create the app; copy the publishable + secret keys.
-3. **Coolify** — new Resource → Dockerfile build from the repo. Set the
-   container port to **3100**. Add every variable from `.env.example` as
-   Coolify environment variables (secrets stay in Coolify, never in the image
-   or git). Deploy — Coolify builds the multi-stage `Dockerfile` and runs the
-   Next.js standalone server.
-4. **Stripe webhook** — point a Stripe webhook at
-   `https://<your-domain>/api/stripe/webhook` for subscription events. Copy the
-   signing secret into `STRIPE_WEBHOOK_SECRET`.
+1. **Supabase** — create the client's project. Apply schema via the committed
+   migrations (`supabase/migrations/*.sql`) with the Supabase CLI from CI —
+   never hand-run SQL in the dashboard. Copy the connection string and keys.
+2. **Env** — on the droplet, put the client's env vars in that client's PM2
+   ecosystem entry / env file, readable only by the deploy user. Per-client
+   secret separation: this process gets only this client's keys. The
+   service-role key bypasses RLS — server-only, never in client-side code.
+3. **App** — clone the repo to the droplet, `pnpm install && pnpm build`
+   (requires `GITHUB_TOKEN` with `read:packages` for the `@nseluga/*` deps),
+   then start under PM2 with an explicit memory limit, e.g.:
 
-   > **⚠️ SECURITY — wire real signature verification before production.** This
-   > template does NOT verify Stripe signatures. It is fail-closed: when
-   > `STRIPE_WEBHOOK_SECRET` is **set**, the route **refuses** every request with
-   > `501 Not Implemented` and never routes to the provision/suspend decision —
-   > so a configured deploy cannot silently trust unauthenticated input. Wire
-   > `stripe.webhooks.constructEvent(rawBody, sig, STRIPE_WEBHOOK_SECRET)` in
-   > `app/api/stripe/webhook/route.ts`, then feed the constructed event through
-   > `parseEvent` + `handleStripeEvent`, to enable the endpoint. With the secret
-   > **unset** (local dev), the route processes events but marks the response
-   > `signatureVerified: false`, `mode: "unverified-dev"`. The provision/suspend
-   > decision routes through `@nseluga/app-core` in both wired and dev cases.
-5. **Cloudflare** — add the app's domain, proxy (orange-cloud) it to the Coolify
-   host, and enable "Full (strict)" TLS. Coolify issues the origin cert.
+   ```bash
+   pm2 start "pnpm start" --name <client-slug> --max-memory-restart 512M
+   pm2 save
+   ```
+
+   Redeploy = `git pull && pnpm install && pnpm build && pm2 reload <client-slug>`.
+4. **Cloudflare** — point the client's subdomain at the droplet (proxied).
+   Confirm the origin firewall only accepts Cloudflare IPs, and that signed
+   /private content is never publicly cached (`Cache-Control: private`).
+5. **Monitoring** — UptimeRobot monitor on `https://<domain>/api/health`
+   (checks real DB connectivity, 503 on failure); Sentry project tagged with
+   the client slug, PII scrubbing on before go-live.
 
 ## Notes
 
-- No secrets are baked into the image; all keys are injected at runtime via
-  Coolify env vars.
-- The app boots and serves 200 even with keys absent, so a misconfigured env
-  fails soft (feature-by-feature) rather than crashing the container.
+- No secrets in the repo or image; everything is injected via env at runtime.
+- The app boots and serves 200 with every key absent, so a misconfigured env
+  fails soft (feature-by-feature) rather than crashing the process.
+- Inbound webhooks (payment processor, SMS provider, accounting) are
+  per-client additions: wire real signature verification into the seams in
+  `lib/webhooks.ts` — the default verifier is fail-closed and rejects
+  everything.
