@@ -1,24 +1,18 @@
 /**
- * storage.ts — Storage adapter interface (template contract).
+ * storage.ts — This app's storage adapter seam.
  *
- * File access always goes through this interface so a client-specific backend
- * (e.g. a client's self-hosted Nextcloud over WebDAV) never hardens into the
- * platform template. The platform default is Supabase Storage in the client's
- * own project; the database stores references (keys), storage holds bytes,
- * and anything private is served via signed, expiring URLs.
- *
- * Keys are ALWAYS derived from canonical business ids (e.g. job id) — no
- * name-based lookups.
+ * The StorageAdapter interface lives in @nseluga/app-core (platform
+ * contract); this file resolves which implementation THIS client uses.
+ * Platform default is Supabase Storage in the client's own project; a
+ * client-specific backend (e.g. self-hosted Nextcloud over WebDAV)
+ * implements the same interface so it never hardens into the template.
+ * Keys are ALWAYS derived from canonical business ids — no name-based
+ * lookups; private content via signed, expiring URLs.
  */
 
-export interface StorageAdapter {
-  /** Store bytes under a canonical key (e.g. `jobs/<jobId>/photos/<file>`). */
-  putFile(key: string, bytes: Uint8Array, contentType: string): Promise<void>;
-  /** Signed, expiring URL for private content. */
-  getSignedUrl(key: string, expiresInSeconds: number): Promise<string>;
-  /** List keys under a canonical prefix. */
-  listKeys(prefix: string): Promise<string[]>;
-}
+import type { StorageAdapter } from "@nseluga/app-core";
+
+export { type StorageAdapter } from "@nseluga/app-core";
 
 /**
  * Resolve the configured adapter, or null when storage is unconfigured (the

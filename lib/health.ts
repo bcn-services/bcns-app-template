@@ -1,53 +1,17 @@
 /**
  * health.ts — Pure health evaluation for the /api/health endpoint.
  *
- * The platform rule (hosting reference): every client app exposes a real
- * health endpoint that checks DB connectivity, not just process-up, so
- * UptimeRobot catches a dead database before the client does. The evaluation
- * is pure and separated from the route so it is unit-testable without network.
- *
- * Keyless behavior: with no Supabase env configured the app must still serve
- * (template contract), so "unconfigured" is healthy-with-a-caveat, while a
- * configured-but-failing DB ping is unhealthy (503 at the route).
+ * The logic lives in @nseluga/app-core (shared platform code — fixes
+ * propagate by version bump); this file just re-exports it so app code
+ * imports from "@/lib/health". See app-core's health.ts for the platform
+ * rules (real DB probe for UptimeRobot; keyless runs report
+ * ok/unconfigured, a configured-but-failing DB ping is a 503).
  */
 
-import type { AppConfig } from "./env";
-
-export type DbStatus = "connected" | "unconfigured" | "error";
-
-export interface HealthReport {
-  ok: boolean;
-  db: DbStatus;
-}
-
-export type DbPing = (supabaseUrl: string, anonKey: string) => Promise<boolean>;
-
-/**
- * Ping the Supabase REST endpoint with the anon key. Any response below 500
- * proves the project is reachable (an auth error still demonstrates
- * connectivity); only network failure or 5xx counts as down. Plain fetch —
- * no SDK dependency.
- */
-export const pingSupabase: DbPing = async (supabaseUrl, anonKey) => {
-  try {
-    const res = await fetch(`${supabaseUrl}/rest/v1/`, {
-      headers: { apikey: anonKey },
-      signal: AbortSignal.timeout(5000),
-    });
-    return res.status < 500;
-  } catch {
-    return false;
-  }
-};
-
-/** Evaluate health from config + an injectable ping (test seam). */
-export async function evaluateHealth(
-  config: AppConfig,
-  ping: DbPing = pingSupabase,
-): Promise<HealthReport> {
-  if (!config.supabaseUrl || !config.supabaseAnonKey) {
-    return { ok: true, db: "unconfigured" };
-  }
-  const reachable = await ping(config.supabaseUrl, config.supabaseAnonKey);
-  return reachable ? { ok: true, db: "connected" } : { ok: false, db: "error" };
-}
+export {
+  type DbStatus,
+  type HealthReport,
+  type DbPing,
+  pingSupabase,
+  evaluateHealth,
+} from "@nseluga/app-core";

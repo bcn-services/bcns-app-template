@@ -1,16 +1,16 @@
 /**
- * ai.ts — Opt-in AI module.
+ * ai.ts — Opt-in AI module (thin wiring over @nseluga/app-core).
  *
- * The AI feature is genuinely opt-in: `maybeGetAiClient` checks the AI_ENABLED
- * flag FIRST and returns null before the client factory is ever referenced.
- * `createAnthropicClient` is only reached when the flag is on AND a key is set,
- * so a build/import with the flag off never constructs an Anthropic client.
- *
- * The factory is injected (deps.createClient) purely as a test seam so an
- * import-boundary test can prove non-invocation when the flag is off.
+ * The flag-gated client factory (`maybeCreateAnthropicClient`) lives in
+ * app-core; this file binds it to THIS app's env-derived config. The AI
+ * feature stays genuinely opt-in: with AI_ENABLED off the factory is never
+ * invoked — see tests/ai-optin.test.mjs for the import-boundary proof.
  */
 
-import { createAnthropicClient } from "@nseluga/app-core";
+import {
+  createAnthropicClient,
+  maybeCreateAnthropicClient,
+} from "@nseluga/app-core";
 import { getConfig, type AppConfig } from "./env";
 
 /**
@@ -27,19 +27,14 @@ export interface AiDeps {
 
 /**
  * Return an Anthropic client ONLY when the AI feature is opted in and a key is
- * present; otherwise null. When AI_ENABLED is off this returns before the
- * factory is called, so the client is never constructed.
+ * present; otherwise null.
  */
 export function maybeGetAiClient(deps: AiDeps = {}): AnthropicClient | null {
   const config = deps.config ?? getConfig();
-  if (!config.aiEnabled) {
-    return null;
-  }
-  if (!config.anthropicApiKey) {
-    return null;
-  }
-  const createClient = deps.createClient ?? createAnthropicClient;
-  return createClient({ apiKey: config.anthropicApiKey });
+  return maybeCreateAnthropicClient(
+    { aiEnabled: config.aiEnabled, anthropicApiKey: config.anthropicApiKey },
+    { createClient: deps.createClient },
+  );
 }
 
 /** True when the AI feature flag is on. Cheap predicate for UI gating. */
