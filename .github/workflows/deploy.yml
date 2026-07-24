@@ -54,6 +54,7 @@ jobs:
 
   deploy:
     needs: migrate
+    if: vars.CLIENT_SLUG != ''
     runs-on: ubuntu-latest
     permissions:
       contents: read
