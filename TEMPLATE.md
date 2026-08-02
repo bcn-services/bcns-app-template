@@ -17,6 +17,7 @@ placeholders, so `pnpm build && pnpm test` is always green here.
 | `app/page.tsx` | The `<h1>` heading and intro copy → client display name | `<h1>Coventry Hills</h1>` |
 | `README.md` | Title line + first paragraph → client name; delete the "Use this template" blockquote | `# coventry-hills — hosted client app` |
 | `CLIENT.md` | Create it (not in the template): display name, business brief, config decisions below — undecided ones listed as open questions | — |
+| `CLAUDE.md` | Not stamped — ships as-is from the template (generic repo orientation, references `CLIENT.md`/`TEMPLATE.md`/`DEPLOY.md`). Add a client-specific `STANDARDS.md` once real code patterns emerge; `CLAUDE.md` points there but doesn't write it. | — |
 
 ## Config decisions (per-client; template default applies until decided)
 
