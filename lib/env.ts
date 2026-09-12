@@ -38,7 +38,7 @@ export interface AppConfig {
   aiEnabled: boolean;
   /**
    * "own" (default): this app's own Supabase project. "shared": the bcns-data
-   * shared platform via @nseluga/data-client (lib/data.ts); no migrations and no
+   * shared platform via @bcn-services/data-client (lib/data.ts); no migrations and no
    * service-role key.
    */
   dataSource: "own" | "shared";

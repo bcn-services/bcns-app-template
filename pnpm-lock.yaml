@@ -8,12 +8,12 @@ importers:
 
   .:
     dependencies:
+      '@bcn-services/data-client':
+        specifier: link:../bcns-data/packages/data-client
+        version: link:../bcns-data/packages/data-client
       '@nseluga/app-core':
         specifier: ^0.2.0
         version: 0.2.0
-      '@nseluga/data-client':
-        specifier: link:../bcns-data/packages/data-client
-        version: link:../bcns-data/packages/data-client
       '@nseluga/ui':
         specifier: ^0.1.0
         version: 0.1.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)

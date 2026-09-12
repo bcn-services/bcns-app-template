@@ -13,7 +13,7 @@
  */
 
 import { createClient } from "@supabase/supabase-js";
-import { createDataClient } from "@nseluga/data-client";
+import { createDataClient } from "@bcn-services/data-client";
 import type { AppConfig } from "./env";
 
 export interface SharedHealthReport {

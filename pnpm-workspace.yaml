@@ -3,4 +3,4 @@ allowBuilds:
   sharp: true
 minimumReleaseAgeExclude:
   - '@nseluga/app-core@0.2.0'
-  - '@nseluga/data-client@0.1.0'
+  - '@bcn-services/data-client@0.1.0'

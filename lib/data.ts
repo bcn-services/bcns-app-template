@@ -1,14 +1,14 @@
 /**
  * data.ts — shared-platform data access (DATA_SOURCE=shared, bcns-data
  * DESIGN.md §8). Reads go through `api.*_v1` views and writes through RPCs,
- * both via @nseluga/data-client, as the signed-in user. The platform's RLS
+ * both via @bcn-services/data-client, as the signed-in user. The platform's RLS
  * scopes every row to that user's client.
  *
  * Returns null outside shared mode, when Supabase env is unset, or when no one
  * is signed in. Callers render an empty/sign-in state for null.
  */
 
-import { createDataClient, type DataClient } from "@nseluga/data-client";
+import { createDataClient, type DataClient } from "@bcn-services/data-client";
 import { getConfig } from "./env";
 import { createSupabaseServer } from "./supabase-server";
 
