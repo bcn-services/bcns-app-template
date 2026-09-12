@@ -14,7 +14,7 @@
   },
   "dependencies": {
     "@nseluga/app-core": "^0.2.0",
-    "@bcn-services/data-client": "link:../bcns-data/packages/data-client",
+    "@bcn-services/data-client": "^0.1.0",
     "@nseluga/ui": "^0.1.0",
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.116.0",
