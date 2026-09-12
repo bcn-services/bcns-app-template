@@ -39,3 +39,8 @@ The app must build and serve with **no environment variables set** and AI
 **off** (`lib/env.ts` reads config lazily — never at import/build time). Don't
 add code that reads `process.env` outside that seam or that assumes a
 `CLIENT.md` config decision has already been made.
+
+**Shared-platform mode** (`DATA_SOURCE=shared`, bcns-data `DESIGN.md` §8): all data
+comes through `lib/data.ts` (`@nseluga/data-client`: `api.*_v1` views, RPC writes)
+as the signed-in user. No migrations, no direct DB access, and never a
+service-role key (`scripts/check-env.ts` fails the build if one is set).

@@ -36,6 +36,26 @@ monorepo under `infra/` — one copy per droplet, not per client repo.
   access (package settings → manage Actions access), or swap in an
   org-scoped PAT secret.
 
+## Shared-platform mode (`DATA_SOURCE=shared`)
+
+For clients on the bcns-data shared platform instead of their own project.
+Everything above applies except the Supabase project and its secrets.
+
+- **No client Supabase project.** Onboard the client on the platform with
+  bcns-data `onboard`; it prints the client's smoke user login once.
+- **`/srv/<slug>/env`:** `DATA_SOURCE=shared`, `NEXT_PUBLIC_SUPABASE_URL` and
+  `NEXT_PUBLIC_SUPABASE_ANON_KEY` of the **platform** project, and
+  `HEALTH_EMAIL`/`HEALTH_PASSWORD` = the smoke user. Never
+  `SUPABASE_SERVICE_ROLE_KEY` or `DATABASE_URL`: `/api/health` returns 503 if
+  the service key is present, so the deploy rolls back.
+- **Repo:** variable `DATA_SOURCE=shared`; no `SUPABASE_DB_URL` secret. CI skips
+  the shadow stack and `db push`. Delete `supabase/migrations/`.
+- **Health:** `/api/health` signs in as the smoke user and reads its client row,
+  so it fails if the platform, auth, or this client's tenant is broken.
+- **Rotating the smoke password** (bcns-data `rotate-smoke`) must also update
+  `HEALTH_PASSWORD` in `/srv/<slug>/env` and restart `bcns-app@<slug>`.
+  Otherwise health fails and the next deploy rolls back.
+
 ## Steps
 
 1. **Supabase** — create the client's project. Schema is applied only by CI:
