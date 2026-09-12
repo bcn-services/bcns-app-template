@@ -36,6 +36,15 @@ export interface AppConfig {
   anthropicApiKey?: string;
   /** Master switch for the opt-in AI module. Default OFF. */
   aiEnabled: boolean;
+  /**
+   * "own" (default): this app's own Supabase project. "shared": the bcns-data
+   * shared platform via @bcn-services/data-client (lib/data.ts); no migrations and no
+   * service-role key.
+   */
+  dataSource: "own" | "shared";
+  /** Shared mode: the client's smoke-user login that /api/health signs in with. */
+  healthEmail?: string;
+  healthPassword?: string;
 }
 
 /**
@@ -51,5 +60,8 @@ export function getConfig(): AppConfig {
     supabaseServiceRoleKey: readEnv("SUPABASE_SERVICE_ROLE_KEY"),
     anthropicApiKey: readEnv("ANTHROPIC_API_KEY"),
     aiEnabled: readFlag("AI_ENABLED"),
+    dataSource: readEnv("DATA_SOURCE")?.toLowerCase() === "shared" ? "shared" : "own",
+    healthEmail: readEnv("HEALTH_EMAIL"),
+    healthPassword: readEnv("HEALTH_PASSWORD"),
   };
 }

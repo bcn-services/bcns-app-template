@@ -23,6 +23,7 @@ placeholders, so `pnpm build && pnpm test` is always green here.
 
 | Decision | Where it lands | Template default |
 | --- | --- | --- |
+| Data source | `DATA_SOURCE` in the deploy env (`/srv/<slug>/env`) and repo variable `DATA_SOURCE`. `shared` also: delete `supabase/migrations/`, set `HEALTH_EMAIL`/`HEALTH_PASSWORD`, read data only via `lib/data.ts` (see `DEPLOY.md` "Shared-platform mode") | Unset = own Supabase project |
 | Storage backend | `lib/storage.ts` — implement and return the adapter in `getStorageAdapter()` | `null` (file features off); platform default is Supabase Storage, WebDAV the documented alternative |
 | AI feature | `AI_ENABLED` in `.env.example` note + per-deploy env | Off (`maybeGetAiClient` returns null) |
 | Webhook providers | Provider routes under `app/api/`, wired through `lib/webhooks.ts` seams | None ship; fail-closed `unverifiedVerifier` |
@@ -32,5 +33,6 @@ placeholders, so `pnpm build && pnpm test` is always green here.
 - `.env.example` — values are per-deploy secrets, filled at deploy time
   (Supabase project keys, optional Anthropic BYOK key). Never real values in git.
 - `supabase/migrations/` — starts empty; client schema arrives with development.
+  Shared-platform clients delete it (the platform owns the schema).
 - `tests/rls-forbidden-read.test.mjs` — standing scaffold; extend per protected
   table/role as the schema grows.
