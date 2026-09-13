@@ -27,6 +27,7 @@ placeholders, so `pnpm build && pnpm test` is always green here.
 | Storage backend | `lib/storage.ts` — implement and return the adapter in `getStorageAdapter()` | `null` (file features off); platform default is Supabase Storage, WebDAV the documented alternative |
 | AI feature | `AI_ENABLED` in `.env.example` note + per-deploy env | Off (`maybeGetAiClient` returns null) |
 | Webhook providers | Provider routes under `app/api/`, wired through `lib/webhooks.ts` seams | None ship; fail-closed `unverifiedVerifier` |
+| Shape | app + agent (default): ship as-is. app-only: delete `agent/`, the `agent` script, and `AGENT_*` from `.env.example`. agent-only: delete `app/`, `middleware.ts`, the Next.js config and dependencies, keep `lib/env.ts`, `lib/ai.ts`, and `agent/` | app + agent |
 
 ## Not changed at creation
 
