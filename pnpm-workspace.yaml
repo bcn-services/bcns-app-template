@@ -5,4 +5,4 @@ minimumReleaseAgeExclude:
   - '@bcn-services/app-core@0.2.0'
   - '@bcn-services/ui@0.1.1'
   - '@bcn-services/config@0.1.1'
-  - '@bcn-services/data-client@0.1.0'
+  - '@bcn-services/data-client@0.2.0'
