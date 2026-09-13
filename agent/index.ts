@@ -58,8 +58,8 @@ const MAX_TOKENS = 4096;
 
 /**
  * Runs the Messages tool loop until the model stops calling tools (a non-
- * `tool_use` stop_reason) or `maxTurns` is reached, then returns the final
- * text. Every `tool_use` block is executed via `runTool`; a thrown error
+ * `tool_use` stop_reason) and returns the final text; throws if `maxTurns`
+ * runs out first. Every `tool_use` block is executed via `runTool`; a thrown error
  * (bad input, platform error) comes back to the model as an `is_error`
  * tool_result rather than aborting the loop.
  */
@@ -98,7 +98,7 @@ export async function runAgent(prompt: string, deps: RunAgentDeps): Promise<stri
     messages.push({ role: "user", content: toolResults });
   }
 
-  return "";
+  throw new Error(`agent: stopped after ${maxTurns} turns without a final answer`);
 }
 
 async function main(): Promise<void> {

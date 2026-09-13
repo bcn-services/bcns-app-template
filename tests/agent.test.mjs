@@ -96,3 +96,17 @@ test("agent: a tool error becomes an is_error tool_result, loop continues", asyn
   assert.equal(toolResult.is_error, true, "an unexposed/failed tool call must set is_error");
   assert.equal(text, "recovered");
 });
+
+test("agent: running out of maxTurns throws instead of returning empty text", async () => {
+  const data = { views: { money_v1: () => fakeQuery([]) } };
+  const ai = {
+    defaultModel: "claude-haiku-4-5",
+    messages: {
+      create: async () => ({
+        stop_reason: "tool_use",
+        content: [{ type: "tool_use", id: "t1", name: "read_view", input: { view: "money_v1" } }],
+      }),
+    },
+  };
+  await assert.rejects(runAgent("x", { ai, data, maxTurns: 2 }), /stopped after 2 turns/);
+});
