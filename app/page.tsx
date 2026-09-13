@@ -1,4 +1,4 @@
-import { PRICING, formatUsd, monthlyCharge } from "@nseluga/app-core";
+import { PRICING, formatUsd, monthlyCharge } from "@bcn-services/app-core";
 import { isAiEnabled } from "@/lib/ai";
 
 // Proves the three workspace:* deps resolve and the app renders 200 with no
