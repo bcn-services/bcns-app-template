@@ -12,8 +12,7 @@
  * evaluateHealth. Never reads process.env; the route passes config in.
  */
 
-import { createClient } from "@supabase/supabase-js";
-import { createDataClient } from "@bcn-services/data-client";
+import { signIn, type SignedInDataClient } from "@bcn-services/data-client";
 import type { AppConfig } from "./env";
 
 export interface SharedHealthReport {
@@ -34,26 +33,22 @@ export type PlatformProbe = (creds: ProbeCreds) => Promise<void>;
 const PROBE_TIMEOUT_MS = 5000;
 
 // One sign-in per token lifetime, not per probe: UptimeRobot hits this every few
-// minutes and each sign-in would leave a session row behind. The promise itself is
-// cached so concurrent cold-cache probes share one sign-in.
-let session: Promise<{ token: string; expiresAt: number }> | null = null;
-
-async function signIn(c: ProbeCreds) {
-  const auth = createClient(c.supabaseUrl, c.anonKey, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
-  const { data, error } = await auth.auth.signInWithPassword({ email: c.email, password: c.password });
-  if (error || !data.session) throw new Error(`health sign-in failed: ${error?.message ?? "no session"}`);
-  return { token: data.session.access_token, expiresAt: data.session.expires_at ?? 0 };
-}
+// minutes and each sign-in would leave a session row behind. `signIn`'s own token
+// getter refreshes near expiry, so we only need to cache the sign-in itself here —
+// reset to null on any failure so the next probe retries a fresh sign-in.
+let client: Promise<SignedInDataClient> | null = null;
 
 export const probePlatform: PlatformProbe = async (c) => {
   try {
-    let s = await (session ??= signIn(c));
-    if (s.expiresAt - 60 < Date.now() / 1000) s = await (session = signIn(c));
-    await createDataClient({ supabaseUrl: c.supabaseUrl, anonKey: c.anonKey, accessToken: s.token }).health();
+    const signedIn = await (client ??= signIn({
+      supabaseUrl: c.supabaseUrl,
+      anonKey: c.anonKey,
+      email: c.email,
+      password: c.password,
+    }));
+    await signedIn.health();
   } catch (e) {
-    session = null;
+    client = null;
     throw e;
   }
 };

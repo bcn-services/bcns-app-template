@@ -45,6 +45,9 @@ export interface AppConfig {
   /** Shared mode: the client's smoke-user login that /api/health signs in with. */
   healthEmail?: string;
   healthPassword?: string;
+  /** Shared mode: the per-client agent user (minted by `add-member --agent`) the CLI agent signs in as. */
+  agentEmail?: string;
+  agentPassword?: string;
 }
 
 /**
@@ -63,5 +66,7 @@ export function getConfig(): AppConfig {
     dataSource: readEnv("DATA_SOURCE")?.toLowerCase() === "shared" ? "shared" : "own",
     healthEmail: readEnv("HEALTH_EMAIL"),
     healthPassword: readEnv("HEALTH_PASSWORD"),
+    agentEmail: readEnv("AGENT_EMAIL"),
+    agentPassword: readEnv("AGENT_PASSWORD"),
   };
 }
